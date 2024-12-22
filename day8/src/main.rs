@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 fn main() {
     let input = include_str!("../input.txt");
-    dbg!(solve(input));
-    //dbg!(solve_2(input));
+    //dbg!(solve(input));
+    dbg!(solve_2(input));
 }
 
 type Coords = (i32, i32);
@@ -60,8 +60,25 @@ fn solve(input: &str) -> usize {
     antinodes.iter().count()
 }
 
+fn compute_antinodes_with_resonance(antenna_list: &[Coords], antinodes: &mut HashSet<Coords>, width: i32, height: i32) {
+    for i in 0..antenna_list.len() {
+        for j in i+1..antenna_list.len() {
+            let c_i = antenna_list[i];
+            let c_j = antenna_list[j];
+            let h_diff = c_j.0 - c_i.0;
+            let w_diff = c_j.1 - c_i.1;
+            (0..).map(|i_test| (c_i.0 + i_test * h_diff, c_i.1 + i_test * w_diff)).take_while(|e| on_grid(e, width, height)).for_each(|e| {dbg!(e);antinodes.insert(e);});
+            (0..).map(|i_test| (c_i.0 - i_test * h_diff, c_i.1 - i_test * w_diff)).take_while(|e| on_grid(e, width, height)).for_each(|e| {dbg!(e);antinodes.insert(e);});
+        }
+    }
+}
+
 fn solve_2(input: &str) -> usize {
-    todo!()
+    let (hash_coords, width, height) = convert_grid(input);
+    // stores all the antinodes
+    let mut antinodes = HashSet::new();
+    hash_coords.values().for_each(|antennas| compute_antinodes_with_resonance(&antennas, &mut antinodes, width, height));
+    antinodes.iter().count()
 }
 
 #[cfg(test)]
