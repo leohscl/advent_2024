@@ -1,4 +1,4 @@
-use std::{collections::HashSet, slice::Windows};
+use std::collections::HashSet;
 
 
 fn main() {
@@ -89,14 +89,14 @@ fn try_add_candidate(new_index: usize, grid: &[char], indices_mapped: &mut HashS
 fn solve_2(input: &str) -> usize {
     let (grid, width, height) = convert_grid(input);
     let mut indices_mapped = HashSet::new();
-    let super_grid_width = width + 1;
-    let super_grid_height = width + 1;
     (0..grid.len()).filter_map(|i_grid| {
         if indices_mapped.contains(&i_grid) {
             return None
         }
-        let mut horizontal_borders = Vec::new();
-        let mut vertical_borders = Vec::new();
+        let mut up_borders = Vec::new();
+        let mut down_borders = Vec::new();
+        let mut left_borders = Vec::new();
+        let mut right_borders = Vec::new();
         let crop = grid[i_grid];
         let mut new_region: Vec<usize> = vec![i_grid];
         let mut active_nodes = vec![i_grid];
@@ -111,19 +111,19 @@ fn solve_2(input: &str) -> usize {
                 if index_new_node >= width {
                     let new_index = index_new_node - width;
                     if try_add_candidate_has_borders(new_index, &grid, &mut indices_mapped, &mut new_nodes, crop) {
-                        horizontal_borders.push(index_new_node);
+                        up_borders.push(index_new_node);
                     }
                 } else {
-                    horizontal_borders.push(index_new_node);
+                    up_borders.push(index_new_node);
                 }
                 // DOWN
                 if index_new_node + width < grid.len() {
                     let new_index = index_new_node + width;
                     if try_add_candidate_has_borders(new_index, &grid, &mut indices_mapped, &mut new_nodes, crop) {
-                        horizontal_borders.push(index_new_node + width);
+                        down_borders.push(index_new_node + width);
                     }
                 } else {
-                    horizontal_borders.push(index_new_node + width);
+                    down_borders.push(index_new_node + width);
                 };
                 // LEFT
                 // reindex grid, to go vertically
@@ -133,26 +133,31 @@ fn solve_2(input: &str) -> usize {
                 if index_new_node % width != 0 {
                     let new_index = index_new_node - 1;
                     if try_add_candidate_has_borders(new_index, &grid, &mut indices_mapped, &mut new_nodes, crop) {
-                        vertical_borders.push(left_border);
+                        left_borders.push(left_border);
                     }
                 } else {
-                    vertical_borders.push(left_border);
+                    left_borders.push(left_border);
                 };
                 // RIGHT
                 let right_border = h + (w + 1) * height;
                 if index_new_node % width != width - 1 {
                     let new_index = index_new_node + 1;
                     if try_add_candidate_has_borders(new_index, &grid, &mut indices_mapped, &mut new_nodes, crop) {
-                        vertical_borders.push(right_border);
+                        right_borders.push(right_border);
                     }
                 } else {
-                    vertical_borders.push(right_border);
+                    right_borders.push(right_border);
                 };
             });
             active_nodes = new_nodes.clone();
             new_region.append(&mut new_nodes);
         }
-        Some(new_region.len() * (score_boudaries(horizontal_borders, width, height + 1) + score_boudaries(vertical_borders, width, height + 1)))
+        let cost_up = score_boudaries(up_borders, width, height + 1);
+        let cost_down = score_boudaries(down_borders, width, height + 1);
+        let cost_left = score_boudaries(left_borders, width, height + 1);
+        let cost_right = score_boudaries(right_borders, width, height + 1);
+        dbg!((cost_up, cost_down, cost_left, cost_right));
+        Some(new_region.len() * (cost_up + cost_down + cost_left + cost_right))
     }).sum()
 }
 
@@ -191,6 +196,27 @@ mod tests {
         let input = include_str!("../input_test_0.txt");
         let result = solve_2(input);
         assert_eq!(result, 80);
+    }
+
+    #[test]
+    fn part_2_other() {
+        let input = include_str!("../input_test_1.txt");
+        let result = solve_2(input);
+        assert_eq!(result, 436);
+    }
+
+    #[test]
+    fn part_2_2() {
+        let input = include_str!("../input_test_2.txt");
+        let result = solve_2(input);
+        assert_eq!(result, 236);
+    }
+
+    #[test]
+    fn part_2_3() {
+        let input = include_str!("../input_test_3.txt");
+        let result = solve_2(input);
+        assert_eq!(result, 368);
     }
 
     #[test]

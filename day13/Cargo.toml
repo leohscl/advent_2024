@@ -1,0 +1,9 @@
+[package]
+name = "day"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+extended-euclidean-algorithm = "0.1.1"
+gcd = "2.3.0"
+itertools = "*"
