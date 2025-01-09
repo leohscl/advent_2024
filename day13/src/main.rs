@@ -3,16 +3,16 @@ use gcd::{euclid_u64, Gcd};
 fn main() {
     let input = include_str!("../input.txt");
     dbg!(solve(input));
-    //dbg!(solve_2(input));
+    dbg!(solve_2(input));
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Button {
     x_increase: i64,
     y_increase: i64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Machine {
     button_a: Button,
     button_b: Button,
@@ -36,6 +36,43 @@ impl Machine {
     fn prize_reached(&self) -> bool {
         self.prize.0 == 0 && self.prize.1 == 0
     }
+
+    fn reduce(&mut self) {
+        let pgcd_x = gcd::euclid_u64(self.button_a.x_increase as u64, self.button_b.x_increase as u64) as i64;
+        let pgcd_y = gcd::euclid_u64(self.button_a.y_increase as u64, self.button_b.y_increase as u64) as i64;
+        self.button_a.x_increase /= pgcd_x;
+        self.button_b.x_increase /= pgcd_x;
+        self.prize.0 /= pgcd_x;
+        self.button_a.y_increase /= pgcd_y;
+        self.button_b.y_increase /= pgcd_y;
+        self.prize.1 /= pgcd_y;
+    }
+
+    fn find_solution(&mut self) -> Option<(i64, i64)> {
+        self.reduce();
+        dbg!(&self);
+        let mut solution_1 = extended_eucl_algorithm(self.button_a.x_increase, self.button_b.x_increase);
+        dbg!(&solution_1);
+        assert_eq!(1, solution_1.0 * self.button_a.x_increase + solution_1.1 * self.button_b.x_increase);
+        solution_1 = (solution_1.0 * self.prize.0, solution_1.1 * self.prize.0);
+        let mut solution_2 = extended_eucl_algorithm(self.button_a.y_increase, self.button_b.y_increase);
+        solution_2 = (solution_2.0 * self.prize.1, solution_2.1 * self.prize.1);
+        dbg!(solution_1, solution_2);
+        todo!()
+    }
+}
+
+fn extended_eucl_algorithm(x: i64, y: i64) -> (i64, i64) {
+    let quotient = x / y;
+    let rem = x - quotient * y;
+    if rem == 1 {
+        return (1, -quotient)
+    }
+    let (op_1, op_2) = extended_eucl_algorithm(y, rem);
+    // 1 = y * op_1 + rem * op_2
+    // 1 = y * op_1 + (x - q * y) * op_2
+    // 1 = y * (op_1 - q * op_2) + x * op_2
+    (op_2, (op_1 - quotient * op_2))
 }
 
 enum MachineState {
@@ -118,24 +155,24 @@ fn solve(input: &str) -> i64 {
     }).sum()
 }
 
+fn solve_eucl(input: &str) -> i64 {
+    let machines = parse_machines(input);
+    machines.into_iter().filter_map(|mut machine| {
+        let solution = machine.find_solution();
+        dbg!(solution);
+        Some(0)
+    }).sum()
+}
 
 
 
 fn solve_2(input: &str) -> i64 {
     let machines = parse_machines_2(input);
-    machines.into_iter().filter_map(|machine| {
-        let mut min_price: Option<i64> = None;
-        dbg!(&min_price);
-        min_price
-    }).sum()
-}
-
-fn get_opt_solution(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
-    let (gcd, s, t) = mathematics::extended_euclidean_algorithm(a, b);
-    if c % gcd != 0 {
-        return None
-    }
-    // return 1 solution
+    machines.into_iter().filter_map(|mut machine| {
+        let solution = machine.find_solution();
+        dbg!(solution);
+        Some(0)
+    }).sum::<i64>();
     todo!()
 }
 
@@ -145,6 +182,10 @@ mod tests {
     use super::*;
 
     #[test]
+    fn ext_eucl() {
+        assert_eq!(extended_eucl_algorithm(120, 23), (-9, 47))
+    }
+    #[test]
     fn part_1() {
         let input = include_str!("../input_test.txt");
         let result = solve(input);
@@ -152,9 +193,16 @@ mod tests {
     }
 
     #[test]
-    fn part_2() {
+    fn part_1_eucl() {
         let input = include_str!("../input_test.txt");
-        let result = solve_2(input);
-        assert_eq!(result, 1206);
+        let result = solve_eucl(input);
+        assert_eq!(result, 480);
     }
+
+    //#[test]
+    //fn part_2() {
+    //    let input = include_str!("../input_test.txt");
+    //    let result = solve_2(input);
+    //    assert_eq!(result, 1206);
+    //}
 }
